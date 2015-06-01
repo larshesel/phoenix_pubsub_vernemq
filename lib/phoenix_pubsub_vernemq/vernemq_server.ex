@@ -2,7 +2,6 @@ defmodule Phoenix.PubSub.VerneMQ.Server do
   @behaviour :gen_emqtt
   require Logger
   alias Phoenix.PubSub.Local
-
   
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts, [name: Keyword.fetch!(opts, :name)])
@@ -34,47 +33,38 @@ defmodule Phoenix.PubSub.VerneMQ.Server do
 
   # emqtt callbacks
   def on_connect(emqtt_state) do
-    log("on_connect")
     :ok = :gen_emqtt.subscribe(self(), :erlang.binary_to_list(emqtt_state.topic), 0)
     {:ok, emqtt_state}
   end
 
   def on_connect_error(_reason, emqtt_state) do
-    log("on_connect_error")
     {:ok, emqtt_state}
   end
 
   def on_disconnect(emqtt_state) do
-    log("on_disconnect")
     {:ok, emqtt_state}
   end
 
-  def on_subscribe(topics, emqtt_state) do
-    log("on_subscribe")
-    IO.inspect {:on_subscribe, topics}
+  def on_subscribe(_topics, emqtt_state) do
     {:ok, emqtt_state}
   end
 
   def on_unsubscribe(_topics, emqtt_state) do
-    log("on_unsubscribe")
     {:ok, emqtt_state}
   end
 
-  def on_publish(topic, payload, emqtt_state) do
+  def on_publish(_topic, payload, emqtt_state) do
     msg = :erlang.binary_to_term(payload)
-    log("on_publish #{inspect {topic, emqtt_state.local_name, msg}}")
     Local.broadcast(emqtt_state.local_name, :none, msg.topic, msg)
     {:ok, emqtt_state}
   end
 
   # Handle channel events
   def handle_call({:subscribe, pid, topic, opts}, _from, state) do
-    log("#{inspect {:subscribe, pid, topic, opts}}")
     response = {:perform, {Local, :subscribe, [state.local_name, pid, topic, opts]}}
     {:reply, response, state}
   end
   def handle_call({:unsubscribe, pid, topic}, _from, state) do
-    log("#{inspect {:unsubscribe, pid, topic}}")
     response = {:perform, {Local, :unsubscribe, [state.local_name, pid, topic]}}
     {:reply, response, state}
   end
@@ -84,18 +74,14 @@ defmodule Phoenix.PubSub.VerneMQ.Server do
     {:reply, response, state}
   end
 
-  def handle_cast(msg, state) do
-    log("#{inspect {:handle_cast, msg, state}}")
+  def handle_cast(_msg, state) do
     {:noreply, state}
   end
 
-  def handle_info(msg, state) do
-    IO.inspect {:handle_info, msg, state}
+  def handle_info(_msg, state) do
     {:reply, :ok, state}
   end
 
   def terminate(_reason, _state), do: :ok
   def code_change(_oldvsn, state, _extra), do: {:ok, state}
-
-  defp log(term), do: Logger.info("VerneMQ>> #{term}")
 end

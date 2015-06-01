@@ -7,7 +7,9 @@ defmodule Phoenix.PubSub.VerneMQ do
                           name: Module.concat(name, Supervisor))
   end
 
-  @defaults [host: "localhost", port: 1883]
+  @defaults [host: "localhost",
+             port: 1883,
+             client_id: "phoenix_vernemq"]
 
   def init([name, opts]) when is_atom(name) do
     local_name = Module.concat(name, Local)
