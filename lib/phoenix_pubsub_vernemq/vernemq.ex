@@ -11,7 +11,10 @@ defmodule Phoenix.PubSub.VerneMQ do
              port: 1883,
              client_id: "phoenix_vernemq",
              publish_qos: 0,
-             subscribe_qos: 0]
+             subscribe_qos: 0,
+             reconnect_timeout: 5,
+             keepalive_interval: 60,
+             clean_session: true]
 
   def init([name, opts]) when is_atom(name) do
     local_name = Module.concat(name, Local)
