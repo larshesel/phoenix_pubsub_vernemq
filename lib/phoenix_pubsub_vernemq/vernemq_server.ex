@@ -14,9 +14,9 @@ defmodule Phoenix.PubSub.VerneMQ.Server do
 
     emqtt_state = %{name: name,
                     local_name: local_name,
-                    host: 'localhost',
-                    port: 1883,
-                    client: 'test_client',
+                    host: Keyword.fetch!(opts, :host),
+                    port: Keyword.fetch!(opts, :port),
+                    client: Keyword.fetch!(opts, :client_id),
                     adapter_pid: self()}
     emqtt_opts = [host: emqtt_state.host,
                   port: emqtt_state.port,
