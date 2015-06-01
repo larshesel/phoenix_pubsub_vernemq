@@ -10,7 +10,7 @@ defmodule PhoenixPubsubVernemq.Mixfile do
      deps: deps,
      package: package,
      description: """
-     The VerneMQ MQTT adapter for the Phoenix framework
+     The VerneMQ MQTT pubsub adapter for the Phoenix framework
      """]
   end
 
@@ -27,7 +27,7 @@ defmodule PhoenixPubsubVernemq.Mixfile do
 
   defp package do
     [contributors: ["Lars Hesel Christensen"],
-     licenses: "Apache v2.0",
+     licenses: ["Apache v2.0"],
      links: %{github: "https://github.com/larshesel/phoenix_pubsub_vernemq"}]
   end
 end
