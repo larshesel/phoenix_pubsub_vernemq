@@ -1,0 +1,2 @@
+defmodule PhoenixPubsubVernemq do
+end
