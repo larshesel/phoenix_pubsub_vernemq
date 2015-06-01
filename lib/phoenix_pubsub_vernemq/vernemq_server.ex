@@ -53,9 +53,14 @@ defmodule Phoenix.PubSub.VerneMQ.Server do
     {:ok, emqtt_state}
   end
 
-  def on_publish(_topic, payload, emqtt_state) do
-    msg = :erlang.binary_to_term(payload)
-    Local.broadcast(emqtt_state.local_name, :none, msg.topic, msg)
+  def on_publish(_topic, vernemq_msg, emqtt_state) do
+    {from_node, from_pid, msg} = :erlang.binary_to_term(vernemq_msg)
+
+    if from_node == node do
+      Local.broadcast(emqtt_state.local_name, from_pid, msg.topic, msg)
+    else
+      Local.broadcast(emqtt_state.local_name, :none, msg.topic, msg)
+    end
     {:ok, emqtt_state}
   end
 
@@ -68,10 +73,12 @@ defmodule Phoenix.PubSub.VerneMQ.Server do
     response = {:perform, {Local, :unsubscribe, [state.local_name, pid, topic]}}
     {:reply, response, state}
   end
-  def handle_call({:broadcast, _pid, _topic, message}, _from, state) do
+  def handle_call({:broadcast, from_pid, _topic, msg}, _from, state) do
+    vernemq_msg = {node, from_pid, msg}
     :ok = :gen_emqtt.publish(state.emqtt_pid,
                              :erlang.binary_to_list(state.topic),
-                             :erlang.term_to_binary(message), state.publish_qos)
+                             :erlang.term_to_binary(vernemq_msg),
+                             state.publish_qos)
     response = :ok
     {:reply, response, state}
   end
