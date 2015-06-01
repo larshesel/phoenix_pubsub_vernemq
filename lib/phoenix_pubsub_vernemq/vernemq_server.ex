@@ -11,8 +11,10 @@ defmodule Phoenix.PubSub.VerneMQ.Server do
     name = Keyword.fetch!(opts, :name)
     local_name = Keyword.fetch!(opts, :local_name)
 
+    node_ref = :crypto.strong_rand_bytes(16)
     emqtt_state = %{name: name,
                     local_name: local_name,
+                    node_ref: node_ref,
                     subscribe_qos: Keyword.fetch!(opts, :subscribe_qos),
                     topic: "phx:#{name}"}
     emqtt_opts = [host: Keyword.fetch!(opts, :host),
@@ -21,6 +23,7 @@ defmodule Phoenix.PubSub.VerneMQ.Server do
     {:ok, pid} = :gen_emqtt.start_link(__MODULE__, emqtt_state, emqtt_opts)
     state = %{emqtt_pid: pid,
               topic: emqtt_state.topic,
+              node_ref: node_ref,
               publish_qos: Keyword.fetch!(opts, :publish_qos),
               local_name: local_name}
     {:ok, state}
@@ -56,7 +59,7 @@ defmodule Phoenix.PubSub.VerneMQ.Server do
   def on_publish(_topic, vernemq_msg, emqtt_state) do
     {from_node, from_pid, msg} = :erlang.binary_to_term(vernemq_msg)
 
-    if from_node == node do
+    if from_node == emqtt_state do
       Local.broadcast(emqtt_state.local_name, from_pid, msg.topic, msg)
     else
       Local.broadcast(emqtt_state.local_name, :none, msg.topic, msg)
@@ -74,7 +77,7 @@ defmodule Phoenix.PubSub.VerneMQ.Server do
     {:reply, response, state}
   end
   def handle_call({:broadcast, from_pid, _topic, msg}, _from, state) do
-    vernemq_msg = {node, from_pid, msg}
+    vernemq_msg = {state.node_ref, from_pid, msg}
     :ok = :gen_emqtt.publish(state.emqtt_pid,
                              :erlang.binary_to_list(state.topic),
                              :erlang.term_to_binary(vernemq_msg),
