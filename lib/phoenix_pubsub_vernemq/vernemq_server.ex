@@ -17,12 +17,14 @@ defmodule Phoenix.PubSub.VerneMQ.Server do
                     host: Keyword.fetch!(opts, :host),
                     port: Keyword.fetch!(opts, :port),
                     client: Keyword.fetch!(opts, :client_id),
+                    topic: "phx:#{name}",
                     adapter_pid: self()}
     emqtt_opts = [host: emqtt_state.host,
                   port: emqtt_state.port,
                   client: emqtt_state.client]
     {:ok, pid} = :gen_emqtt.start_link(__MODULE__, emqtt_state, emqtt_opts)
     state = %{emqtt_pid: pid,
+              topic: emqtt_state.topic,
               local_name: local_name}
     {:ok, state}
   end
@@ -33,6 +35,7 @@ defmodule Phoenix.PubSub.VerneMQ.Server do
   # emqtt callbacks
   def on_connect(emqtt_state) do
     log("on_connect")
+    :ok = :gen_emqtt.subscribe(self(), :erlang.binary_to_list(emqtt_state.topic), 0)
     {:ok, emqtt_state}
   end
 
@@ -60,28 +63,23 @@ defmodule Phoenix.PubSub.VerneMQ.Server do
   def on_publish(topic, payload, emqtt_state) do
     msg = :erlang.binary_to_term(payload)
     log("on_publish #{inspect {topic, emqtt_state.local_name, msg}}")
-    Local.broadcast(emqtt_state.local_name, :none, :erlang.list_to_binary(topic), msg)
+    Local.broadcast(emqtt_state.local_name, :none, msg.topic, msg)
     {:ok, emqtt_state}
   end
 
   # Handle channel events
   def handle_call({:subscribe, pid, topic, opts}, _from, state) do
     log("#{inspect {:subscribe, pid, topic, opts}}")
-    qos = 0
-    :gen_emqtt.subscribe(state.emqtt_pid, :erlang.binary_to_list(topic), qos)
     response = {:perform, {Local, :subscribe, [state.local_name, pid, topic, opts]}}
     {:reply, response, state}
   end
   def handle_call({:unsubscribe, pid, topic}, _from, state) do
     log("#{inspect {:unsubscribe, pid, topic}}")
-    :gen_emqtt.unsubscribe(state.emqtt_pid, :erlang.binary_to_list(topic))
     response = {:perform, {Local, :unsubscribe, [state.local_name, pid, topic]}}
     {:reply, response, state}
   end
-  def handle_call({:broadcast, pid, topic, message}, _from, state) do
-    log("#{inspect {:broadcast, pid, topic, message}}")
-    qos = 0
-    :gen_emqtt.publish(state.emqtt_pid, :erlang.binary_to_list(topic), :erlang.term_to_binary(message), qos)
+  def handle_call({:broadcast, _pid, _topic, message}, _from, state) do
+    :ok = :gen_emqtt.publish(state.emqtt_pid, :erlang.binary_to_list(state.topic), :erlang.term_to_binary(message), 0)
     response = :ok
     {:reply, response, state}
   end
