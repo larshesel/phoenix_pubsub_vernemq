@@ -13,17 +13,15 @@ defmodule Phoenix.PubSub.VerneMQ.Server do
 
     emqtt_state = %{name: name,
                     local_name: local_name,
-                    host: Keyword.fetch!(opts, :host),
-                    port: Keyword.fetch!(opts, :port),
-                    client: Keyword.fetch!(opts, :client_id),
-                    topic: "phx:#{name}",
-                    adapter_pid: self()}
-    emqtt_opts = [host: emqtt_state.host,
-                  port: emqtt_state.port,
-                  client: emqtt_state.client]
+                    subscribe_qos: Keyword.fetch!(opts, :subscribe_qos),
+                    topic: "phx:#{name}"}
+    emqtt_opts = [host: Keyword.fetch!(opts, :host),
+                  port: Keyword.fetch!(opts, :port),
+                  client: Keyword.fetch!(opts, :client_id)]
     {:ok, pid} = :gen_emqtt.start_link(__MODULE__, emqtt_state, emqtt_opts)
     state = %{emqtt_pid: pid,
               topic: emqtt_state.topic,
+              publish_qos: Keyword.fetch!(opts, :publish_qos),
               local_name: local_name}
     {:ok, state}
   end
@@ -33,7 +31,9 @@ defmodule Phoenix.PubSub.VerneMQ.Server do
 
   # emqtt callbacks
   def on_connect(emqtt_state) do
-    :ok = :gen_emqtt.subscribe(self(), :erlang.binary_to_list(emqtt_state.topic), 0)
+    :ok = :gen_emqtt.subscribe(self(),
+                               :erlang.binary_to_list(emqtt_state.topic),
+                               emqtt_state.subscribe_qos)
     {:ok, emqtt_state}
   end
 
@@ -69,7 +69,9 @@ defmodule Phoenix.PubSub.VerneMQ.Server do
     {:reply, response, state}
   end
   def handle_call({:broadcast, _pid, _topic, message}, _from, state) do
-    :ok = :gen_emqtt.publish(state.emqtt_pid, :erlang.binary_to_list(state.topic), :erlang.term_to_binary(message), 0)
+    :ok = :gen_emqtt.publish(state.emqtt_pid,
+                             :erlang.binary_to_list(state.topic),
+                             :erlang.term_to_binary(message), state.publish_qos)
     response = :ok
     {:reply, response, state}
   end
