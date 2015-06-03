@@ -2,9 +2,9 @@ defmodule Phoenix.PubSub.VerneMQ do
   use Supervisor
 
   def start_link(name, opts) do
-
+    supervisor_name = Module.concat(name, Supervisor)
     Supervisor.start_link(__MODULE__, [name, opts],
-                          name: Module.concat(name, Supervisor))
+                          name: supervisor_name)
   end
 
   @defaults [host: "localhost",
@@ -16,13 +16,14 @@ defmodule Phoenix.PubSub.VerneMQ do
              keepalive_interval: 60,
              clean_session: true]
 
-  def init([name, opts]) when is_atom(name) do
-    local_name = Module.concat(name, Local)
+  def init([server_name, opts]) when is_atom(server_name) do
+    local_name = Module.concat(server_name, Local)
 
     opts = Keyword.merge(@defaults, opts)
     opts = Keyword.merge(opts, host: String.to_char_list(opts[:host]))
     opts = Keyword.merge(opts, client_id: String.to_char_list(opts[:client_id]))
-    opts = Keyword.merge(opts, [name: name, local_name: local_name])
+    opts = Keyword.merge(opts, [name: server_name,
+                                local_name: local_name])
 
     children = [
       worker(Phoenix.PubSub.Local, [local_name]),
