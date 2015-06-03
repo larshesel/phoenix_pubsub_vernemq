@@ -1,5 +1,7 @@
 ## Phoenix.Pubsub.VerneMQ
 
+[![Build Status](https://travis-ci.org/larshesel/phoenix_pubsub_vernemq.svg?branch=master)](https://travis-ci.org/larshesel/phoenix_pubsub_vernemq)
+
 A VerneMQ PubSub adapter for the
 [Phoenix framework](http://www.phoenixframework.org/).
 
