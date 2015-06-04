@@ -18,16 +18,27 @@ defmodule Phoenix.PubSub.VerneMQ do
 
   def init([server_name, opts]) when is_atom(server_name) do
     local_name = Module.concat(server_name, Local)
+    emqtt_name = Module.concat(server_name, EMQTT)
 
     opts = Keyword.merge(@defaults, opts)
     opts = Keyword.merge(opts, host: String.to_char_list(opts[:host]))
     opts = Keyword.merge(opts, client_id: String.to_char_list(opts[:client_id]))
     opts = Keyword.merge(opts, [name: server_name,
-                                local_name: local_name])
+                                local_name: local_name,
+                                emqtt_name: emqtt_name])
+
+    emqtt_opts =
+      [host: Keyword.fetch!(opts, :host),
+       port: Keyword.fetch!(opts, :port),
+       client: Keyword.fetch!(opts, :client_id),
+       server_name: server_name,
+       local_name: local_name,
+       emqtt_name: emqtt_name]
 
     children = [
       worker(Phoenix.PubSub.Local, [local_name]),
       worker(Phoenix.PubSub.VerneMQ.Server, [opts]),
+      worker(Phoenix.PubSub.VerneMQ.Conn, [emqtt_opts]),
     ]
 
     supervise children, strategy: :one_for_all
