@@ -1,4 +1,9 @@
 language: elixir
-sudo: false
 otp_release:
   - 17.4
+
+before_script:
+  - curl -s https://packagecloud.io/install/repositories/erlio/vernemq/script.deb.sh | sudo bash
+  - sudo apt-get install vernemq=0.9.4-1
+  - sudo sed -i.bak 's/allow_anonymous = off/allow_anonymous = on/' /etc/vernemq/vernemq.conf
+  - sudo service vernemq start
