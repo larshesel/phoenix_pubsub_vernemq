@@ -7,37 +7,32 @@ defmodule Phoenix.PubSub.VerneMQ do
                           name: supervisor_name)
   end
 
-  @defaults [host: "localhost",
-             port: 1883,
-             client_id: "phoenix_vernemq",
-             publish_qos: 0,
-             subscribe_qos: 0,
-             reconnect_timeout: 5,
-             keepalive_interval: 60,
-             clean_session: true]
-
   def init([server_name, opts]) when is_atom(server_name) do
     local_name = Module.concat(server_name, Local)
     emqtt_name = Module.concat(server_name, EMQTT)
 
-    opts = Keyword.merge(@defaults, opts)
-    opts = Keyword.merge(opts, host: String.to_char_list(opts[:host]))
-    opts = Keyword.merge(opts, client_id: String.to_char_list(opts[:client_id]))
-    opts = Keyword.merge(opts, [name: server_name,
-                                local_name: local_name,
-                                emqtt_name: emqtt_name])
+    server_opts = [publish_qos: Keyword.get(opts, :publish_qos, 0),
+                   subscribe_qos: Keyword.get(opts, :subscribe_qos, 0),
+                   server_name: server_name,
+                   local_name: local_name,
+                   emqtt_name: emqtt_name]
 
     emqtt_opts =
-      [host: Keyword.fetch!(opts, :host),
-       port: Keyword.fetch!(opts, :port),
-       client: Keyword.fetch!(opts, :client_id),
+      [host: Keyword.get(opts, :host, "localhost") |> String.to_char_list,
+       port: Keyword.get(opts, :port, 1883),
+       username: Keyword.get(opts, :username, :undefined),
+       password: Keyword.get(opts, :password, :undefined),
+       client: Keyword.get(opts, :client_id, "phoenix_vernemq") |> String.to_char_list,
+       clean_session: Keyword.get(opts, :clean_session, true),
+       reconnect_timeout: Keyword.get(opts, :reconnect_timeout, 5),
+       keepalive_interval: Keyword.get(opts, :keepalive_interval, 60),
+       emqtt_name: emqtt_name,
        server_name: server_name,
-       local_name: local_name,
-       emqtt_name: emqtt_name]
+       local_name: local_name]
 
     children = [
       worker(Phoenix.PubSub.Local, [local_name]),
-      worker(Phoenix.PubSub.VerneMQ.Server, [opts]),
+      worker(Phoenix.PubSub.VerneMQ.Server, [server_opts]),
       worker(Phoenix.PubSub.VerneMQ.Conn, [emqtt_opts]),
     ]
 

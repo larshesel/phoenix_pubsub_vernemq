@@ -4,12 +4,11 @@ defmodule Phoenix.PubSub.VerneMQ.Conn do
   require Logger
 
   def start_link(opts) do
-    emqtt_name = Keyword.fetch!(opts, :emqtt_name)
     state = %{
       server_name: Keyword.fetch!(opts, :server_name),
       local_name: Keyword.fetch!(opts, :local_name),
       }
-    :gen_emqtt.start_link({:local, emqtt_name},__MODULE__,state, opts)
+    :gen_emqtt.start_link({:local, Keyword.fetch!(opts, :emqtt_name)},__MODULE__,state, opts)
   end
 
   def init(state) do

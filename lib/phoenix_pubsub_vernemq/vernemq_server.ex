@@ -5,19 +5,16 @@ defmodule Phoenix.PubSub.VerneMQ.Server do
 
   # Client
   def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, [name: Keyword.fetch!(opts, :name)])
+    GenServer.start_link(__MODULE__, opts, [name: Keyword.fetch!(opts, :server_name)])
   end
 
   # Callbacks.
   def init(opts) when is_list(opts) do
-    name = Keyword.fetch!(opts, :name)
-    local_name = Keyword.fetch!(opts, :local_name)
     state =
-      %{emqtt_name: Keyword.fetch!(opts, :emqtt_name),
-        name: name,
+      %{local_name: Keyword.fetch!(opts, :local_name),
+        emqtt_name: Keyword.fetch!(opts, :emqtt_name),
         publish_qos: Keyword.fetch!(opts, :publish_qos),
-        subscribe_qos: Keyword.fetch!(opts, :subscribe_qos),
-        local_name: local_name}
+        subscribe_qos: Keyword.fetch!(opts, :subscribe_qos)}
     send self, :wait_for_connect
     {:ok, state}
   end
