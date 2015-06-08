@@ -16,7 +16,7 @@ In order to use the VerneMQ pubsub adapter in phoenix, add it and
 ```Elixir
 defp deps do
   [{:vmq_commons, git: "https://github.com/erlio/vmq_commons.git"},
-   {:phoenix_pubsub_vernemq, "~> 0.0.1"}],
+   {:phoenix_pubsub_vernemq, "~> 0.0.2"}],
 end
 ```
 
