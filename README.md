@@ -15,12 +15,15 @@ In order to use the VerneMQ pubsub adapter in phoenix, add it and
 
 ```Elixir
 defp deps do
-  [{:vmq_commons, git: "https://github.com/erlio/vmq_commons.git"},
+  [{:vmq_commons, git: "https://github.com/erlio/vmq_commons.git", compile: "rebar compile"},
    {:phoenix_pubsub_vernemq, "~> 0.0.2"}],
 end
 ```
 
-and configure your endpoint appropriately:
+Note that you need [rebar](https://github.com/basho/rebar) installed
+in order to compile the `vmq_commons` dependency.
+
+Then configure your endpoint appropriately:
 
 ```Elixir
 config :my_app, MyApp.Endpoint,

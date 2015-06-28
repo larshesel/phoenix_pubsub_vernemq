@@ -23,8 +23,7 @@ defmodule PhoenixPubsubVernemq.Mixfile do
 
   defp deps do
     [{:phoenix, github: "phoenixframework/phoenix"},
-     {:vmq_commons, git: "https://github.com/erlio/vmq_commons.git",
-      ref: "144c894bbbf198c62846740b03cda3fd071f2d35"}]
+     {:vmq_commons, git: "https://github.com/erlio/vmq_commons.git", compile: "rebar compile"}]
   end
 
   defp package do
